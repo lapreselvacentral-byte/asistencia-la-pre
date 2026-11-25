@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Asistencia QR - La Pre</title>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      margin: 0;
+      padding: 20px;
+      color: #1e293b;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      padding: 22px;
+      background: white;
+      border-radius: 14px;
+      text-align: center;
+    }
+
+    h1 { color: #174b82; }
+
+    select, button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 14px;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    select { border: 1px solid #cbd5e1; }
+
+    button {
+      border: none;
+      background: #174b82;
+      color: white;
+      font-weight: bold;
+    }
+
+    #lector { margin-top: 20px; }
+
+    #estado {
+      margin-top: 18px;
+      padding: 13px;
+      background: #e2e8f0;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>LA PRE</h1>
+    <strong>CONTROL DE ASISTENCIA QR</strong>
+    <p>Registro de ingreso y salida del personal</p>
+
+    <select id="sede">
+      <option value="">Seleccionar sede</option>
+      <option value="SED001">La Merced</option>
+      <option value="SED002">San Ramón</option>
+      <option value="SED003">Oxapampa</option>
+    </select>
+
+    <button id="iniciar" onclick="iniciarEscaner()">
+      ACTIVAR CÁMARA
+    </button>
+
+    <button onclick="detenerEscaner()">
+      DETENER CÁMARA
+    </button>
+
+    <div id="lector"></div>
+    <div id="estado">Selecciona una sede para comenzar.</div>
+  </div>
+
+  <script>
+    let escaner = null;
+    let procesando = false;
+
+    async function iniciarEscaner() {
+      const sede = document.getElementById('sede').value;
+      const estado = document.getElementById('estado');
+
+      if (!sede) {
+        estado.textContent = 'Primero selecciona una sede.';
+        return;
+      }
+
+      try {
+        if (escaner) {
+          await escaner.clear();
+        }
+
+        escaner = new Html5Qrcode('lector');
+
+        estado.textContent = 'Solicitando acceso a la cámara...';
+
+        await escaner.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          codigo => {
+            if (procesando) return;
+
+            procesando = true;
+            estado.textContent = 'QR leído: ' + codigo;
+
+            escaner.pause(true);
+
+            setTimeout(() => {
+              procesando = false;
+              if (escaner && escaner.isScanning) {
+                escaner.resume();
+              }
+            }, 2500);
+          }
+        );
+
+        estado.textContent = 'Cámara activada. Escanea un QR.';
+
+      } catch (error) {
+        estado.textContent = 'Error al abrir la cámara: ' + error;
+      }
+    }
+
+    async function detenerEscaner() {
+      if (escaner && escaner.isScanning) {
+        await escaner.stop();
+        await escaner.clear();
+      }
+
+      escaner = null;
+      document.getElementById('estado').textContent = 'Cámara detenida.';
+    }
+  </script>
+</body>
+</html>
