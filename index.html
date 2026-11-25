@@ -175,7 +175,15 @@
           })
         });
 
-        const datos = await respuesta.json();
+        const textoRespuesta = await respuesta.text();
+console.log('Respuesta del servidor:', textoRespuesta);
+
+let datos;
+try {
+  datos = JSON.parse(textoRespuesta);
+} catch (error) {
+  throw new Error('El servidor no devolvió JSON. Respuesta: ' + textoRespuesta);
+}
 
         if (!respuesta.ok || !datos.correcto) {
           throw new Error(datos.mensaje || 'No se pudo registrar la asistencia.');
